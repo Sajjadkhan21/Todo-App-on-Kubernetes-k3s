@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Todo App</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; }
+    li { margin: 8px 0; cursor: pointer; }
+    .done { text-decoration: line-through; color: gray; }
+    button { margin-left: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Todo App</h1>
+  <input id="title" placeholder="New task..." />
+  <button onclick="addTodo()">Add</button>
+  <ul id="list"></ul>
+
+  <script>
+    async function load() {
+      const res = await fetch('/api/todos');
+      const todos = await res.json();
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+      todos.forEach(t => {
+        const li = document.createElement('li');
+        li.textContent = t.title;
+        if (t.done) li.className = 'done';
+        li.onclick = () => toggle(t.id);
+        const del = document.createElement('button');
+        del.textContent = 'X';
+        del.onclick = (e) => { e.stopPropagation(); remove(t.id); };
+        li.appendChild(del);
+        list.appendChild(li);
+      });
+    }
+    async function addTodo() {
+      const input = document.getElementById('title');
+      if (!input.value.trim()) return;
+      await fetch('/api/todos', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title: input.value})
+      });
+      input.value = '';
+      load();
+    }
+    async function toggle(id) { await fetch('/api/todos/' + id, {method: 'PUT'}); load(); }
+    async function remove(id) { await fetch('/api/todos/' + id, {method: 'DELETE'}); load(); }
+    load();
+  </script>
+</body>
+</html>
